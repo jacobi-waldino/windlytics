@@ -1,13 +1,7 @@
-import React, { useState } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Rectangle,
-} from "react-leaflet";
+import React, { useState, useEffect } from "react";
+import { MapContainer, TileLayer, Rectangle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import "leaflet-velocity";
-console.log("velocityLayer", L.velocityLayer);
 import {
   Box,
   AppBar,
@@ -25,6 +19,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import SquareSelector from "./SquareSelector";
 import NumberInput from "./NumberInput";
+import townsData from "../data/nova_scotia_towns.json";
 
 export default function MapSelectionApp() {
   const [box, setBox] = useState(null); // single selection
@@ -32,6 +27,47 @@ export default function MapSelectionApp() {
     [43.3, -66.4], // SW
     [47.1, -59.6], // NE
   ];
+  const [towns, setTowns] = useState([]);
+  const [adminRegion, setAdminRegion] = useState({ state: "", country: "" });
+  const [showAllTowns, setShowAllTowns] = useState(false);
+
+  useEffect(() => {
+    if (!box) return;
+
+    const [[latSW, lngSW], [latNE, lngNE]] = box.bounds;
+
+    const nearbyTowns = townsData
+      .filter(
+        (t) =>
+          t.lat >= latSW && t.lat <= latNE && t.lng >= lngSW && t.lng <= lngNE
+      )
+      .map((t) => t.name);
+
+    console.log("Box bounds:", latSW, lngSW, latNE, lngNE);
+    console.log("Nearby towns:", nearbyTowns);
+    setTowns(nearbyTowns);
+    setAdminRegion({ state: "Nova Scotia", country: "Canada" });
+  }, [box]);
+
+  // Compute approximate width, height, area
+  const getAreaString = () => {
+    if (!box) return "";
+    const latSW = box.bounds[0][1];
+    const latNE = box.bounds[1][1];
+    const lngSW = box.bounds[0][0];
+    const lngNE = box.bounds[1][0];
+
+    const dLat = latNE - latSW;
+    const dLng = lngNE - lngSW;
+    const kmPerDegLat = 111;
+    const kmPerDegLng = 111 * Math.cos((((latSW + latNE) / 2) * Math.PI) / 180);
+    const heightKm = kmPerDegLat * dLat;
+    const widthKm = kmPerDegLng * dLng;
+    const areaKm2 = widthKm * heightKm;
+    return `${areaKm2.toFixed(2)} km² (≈ ${widthKm.toFixed(
+      2
+    )} × ${heightKm.toFixed(2)} km)`;
+  };
 
   const handleAddBox = (bounds) => {
     setBox({ id: 1, bounds }); // overwrite previous selection
@@ -59,7 +95,6 @@ export default function MapSelectionApp() {
             maxBounds={novaScotiaBounds}
             maxBoundsViscosity={1.0}
             minZoom={8}
-            maxZoom={10}
             style={{ height: "100%", width: "100%" }}
           >
             <TileLayer
@@ -113,36 +148,89 @@ export default function MapSelectionApp() {
               </Typography>
               <Divider sx={{ mb: 2 }} />
               {box ? (
-                <>
-                  <List dense>
-                    <ListItem
-                      secondaryAction={
-                        <IconButton
-                          edge="end"
-                          aria-label="delete"
-                          onClick={handleDeleteBox}
-                        >
-                          <DeleteIcon color="error" />
-                        </IconButton>
+                <List dense>
+                  <ListItem
+                    secondaryAction={
+                      <IconButton
+                        edge="end"
+                        aria-label="delete"
+                        onClick={handleDeleteBox}
+                      >
+                        <DeleteIcon color="error" />
+                      </IconButton>
+                    }
+                  >
+                    <ListItemText
+                      primary={`Selected Area`}
+                      secondary={
+                        <>
+                          SW: {box.bounds[0][0].toFixed(5)},{" "}
+                          {box.bounds[0][1].toFixed(5)} <br />
+                          NE: {box.bounds[1][0].toFixed(5)},{" "}
+                          {box.bounds[1][1].toFixed(5)}
+                        </>
                       }
-                    >
-                      <ListItemText
-                        primary={`Selected Area`}
-                        secondary={
+                    />
+                  </ListItem>
+
+                  <ListItem>
+                    <ListItemText
+                      primary={`Centroid`}
+                      secondary={`${(
+                        (box.bounds[0][1] + box.bounds[1][1]) /
+                        2
+                      ).toFixed(5)}, ${(
+                        (box.bounds[0][0] + box.bounds[1][0]) /
+                        2
+                      ).toFixed(5)}`}
+                    />
+                  </ListItem>
+
+                  <ListItem>
+                    <ListItemText
+                      primary={`Approximate Size`}
+                      secondary={getAreaString()}
+                    />
+                  </ListItem>
+
+                  <ListItem>
+                    <ListItemText
+                      primary={`Administrative Region`}
+                      secondary={`${adminRegion.state}, ${adminRegion.country}`}
+                    />
+                  </ListItem>
+
+                  <ListItem>
+                    <ListItemText
+                      primary="Nearby Towns / Cities"
+                      secondary={
+                        towns.length === 0 ? (
+                          "None in selection"
+                        ) : (
                           <>
-                            SW: {box.bounds[0][0].toFixed(5)},{" "}
-                            {box.bounds[0][1].toFixed(5)} <br />
-                            NE: {box.bounds[1][0].toFixed(5)},{" "}
-                            {box.bounds[1][1].toFixed(5)}
+                            {showAllTowns
+                              ? towns.join(", ")
+                              : towns.slice(0, 5).join(", ")}
+                            {towns.length > 5 && (
+                              <Button
+                                size="small"
+                                onClick={() => setShowAllTowns(!showAllTowns)}
+                                sx={{ ml: 1, textTransform: "none" }}
+                              >
+                                {showAllTowns ? "Show less" : "Show more"}
+                              </Button>
+                            )}
                           </>
-                        }
-                      />
-                    </ListItem>
-                    <ListItem>
-                      <NumberInput />
-                    </ListItem>
-                  </List>
-                </>
+                        )
+                      }
+                    />
+                  </ListItem>
+
+                  <ListItem>
+                    {/* Example of your NumberInput */}
+                    <NumberInput />
+                  </ListItem>
+                </List>
               ) : (
                 <Typography variant="body2" color="text.secondary">
                   Click two points on the map to create a single square area.
