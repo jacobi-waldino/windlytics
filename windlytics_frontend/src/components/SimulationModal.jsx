@@ -12,6 +12,7 @@ import {
   IconButton,
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import CloseIcon from "@mui/icons-material/Close";
 import {
   LineChart,
   Line,
@@ -33,7 +34,6 @@ export default function SimulationModal({ open, onClose, windmills }) {
 
   const handleTabChange = (e, newValue) => setActiveTab(newValue);
 
-  // Compute total energy & revenue
   const getSummary = (w) => {
     if (!w?.result?.daily_energies) return null;
     const totalEnergy =
@@ -61,7 +61,6 @@ export default function SimulationModal({ open, onClose, windmills }) {
     return { totalEnergy, revenue };
   };
 
-  // Flatten hourly energies for plotting
   const getHourlyData = (w) => {
     if (!w?.result?.daily_energies) return [];
     return w.result.daily_energies.flatMap((day) =>
@@ -75,20 +74,41 @@ export default function SimulationModal({ open, onClose, windmills }) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>
-        Results
-        <Box sx={{ mt: 1 }}>
+      <DialogTitle
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="h5">
+          <b>Results</b>
+        </Typography>
+        
+        <Box>
           <Button
             size="small"
             variant="outlined"
             onClick={() => setComparison((prev) => !prev)}
+            sx={{ mr: 1 }}
           >
             {comparison ? "Individual View" : "Comparison View"}
           </Button>
+          <IconButton onClick={onClose} aria-label="Close Results">
+            <CloseIcon />
+          </IconButton>
         </Box>
       </DialogTitle>
 
-      <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <DialogContent
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          maxHeight: "80vh",
+          overflowY: "auto",
+        }}
+      >
         {!comparison ? (
           <>
             <Tabs
@@ -97,10 +117,16 @@ export default function SimulationModal({ open, onClose, windmills }) {
               variant="scrollable"
               scrollButtons="auto"
               TabIndicatorProps={{ style: { backgroundColor: "#1976d2" } }}
+              aria-label="Select turbine to view results"
               sx={{ mb: 1 }}
             >
               {windmills.map((w, i) => (
-                <Tab key={w.id} label={`Turbine #${i + 1}`} />
+                <Tab
+                  key={w.id}
+                  label={`Turbine #${i + 1}`}
+                  id={`turbine-tab-${i}`}
+                  aria-controls={`turbine-tabpanel-${i}`}
+                />
               ))}
             </Tabs>
 
@@ -117,6 +143,7 @@ export default function SimulationModal({ open, onClose, windmills }) {
                       backgroundColor: "#e3f2fd",
                       borderRadius: 1,
                     }}
+                    aria-label={`Summary for Turbine #${activeTab + 1}`}
                   >
                     <Typography variant="h6">
                       <b>Energy Generated:</b>{" "}
@@ -136,29 +163,34 @@ export default function SimulationModal({ open, onClose, windmills }) {
                   </Box>
                 );
               })()}
-            {/* Tooltip at top-right */}
-        <Tooltip
-          title={
-            <Typography sx={{ fontSize: 16 }}>
-              <b>Cut-in Wind Speed:</b> The minimum wind speed at which the
-              turbine starts generating power.
-              <br />
-              <b>Rated Wind Speed:</b> The wind speed at which the turbine
-              generates its maximum (rated) power.
-              <br />
-              <b>Cut-out Wind Speed:</b> The wind speed above which the turbine
-              stops to prevent damage.
-            </Typography>
-          }
-          placement="top"
-          arrow
-        >
-          <IconButton size="small">
-            <InfoOutlinedIcon fontSize="medium" />
-          </IconButton>
-        </Tooltip>
+
+            <Tooltip
+              title={
+                <Typography sx={{ fontSize: 16 }}>
+                  <b>Cut-in Wind Speed:</b> Minimum speed to start generating
+                  power.
+                  <br />
+                  <b>Rated Wind Speed:</b> Speed at max power.
+                  <br />
+                  <b>Cut-out Wind Speed:</b> Speed above which turbine stops.
+                </Typography>
+              }
+              placement="top"
+              arrow
+            >
+              <IconButton size="small" aria-label="Wind speed definitions">
+                <InfoOutlinedIcon fontSize="medium" />
+              </IconButton>
+            </Tooltip>
+
             {windmills[activeTab] && windmills[activeTab].result ? (
-              <ResponsiveContainer width="100%" height={400}>
+              <ResponsiveContainer
+                width="100%"
+                height={400}
+                aria-label={`Hourly energy and wind speed chart for Turbine #${
+                  activeTab + 1
+                }`}
+              >
                 <LineChart data={getHourlyData(windmills[activeTab])}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="datetime" tick={{ fontSize: 10 }} />
@@ -251,11 +283,10 @@ export default function SimulationModal({ open, onClose, windmills }) {
                     {windmills[activeTab].result?.tip_height} m
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Cut-in Wind Speed:</strong>{" "}
+                    <strong>Cut-in Speed:</strong>{" "}
                     {windmills[activeTab].result?.cut_in} m/s |{" "}
-                    <strong>Rated Wind Speed:</strong>{" "}
-                    {windmills[activeTab].result?.rated} m/s |{" "}
-                    <strong>Cut-out Wind Speed:</strong>{" "}
+                    <strong>Rated Speed:</strong> {windmills[activeTab].result?.rated}{" "}
+                    m/s | <strong>Cut-out Speed:</strong>{" "}
                     {windmills[activeTab].result?.cut_out} m/s
                   </Typography>
                   <Typography variant="body2">
@@ -274,6 +305,7 @@ export default function SimulationModal({ open, onClose, windmills }) {
           <>
             <Box
               sx={{ mb: 1, p: 1, backgroundColor: "#e3f2fd", borderRadius: 1 }}
+              aria-label="Comparison summary"
             >
               <Typography variant="h6">
                 <b>Total Energy Generated:</b>{" "}
@@ -286,7 +318,7 @@ export default function SimulationModal({ open, onClose, windmills }) {
                 MWh
               </Typography>
               <Typography variant="h6">
-                <b>Potential Revenue:</b> $
+                <b>Total Potential Revenue:</b> $
                 {(
                   windmills.reduce(
                     (sum, w) => sum + (w.result?.total_energy_MWh || 0),
@@ -296,7 +328,11 @@ export default function SimulationModal({ open, onClose, windmills }) {
               </Typography>
             </Box>
 
-            <ResponsiveContainer width="100%" height={500}>
+            <ResponsiveContainer
+              width="100%"
+              height={500}
+              aria-label="Comparison chart for all turbines"
+            >
               <LineChart>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
@@ -327,20 +363,17 @@ export default function SimulationModal({ open, onClose, windmills }) {
                   if (!w.result?.daily_energies) return null;
                   const hourlyData = getHourlyData(w);
                   const energyColor = colors[(i * 2) % colors.length];
-                  const windColor = colors[(i * 2 + 1) % colors.length];
                   return (
-                    <React.Fragment key={w.id}>
-                      <Line
-                        yAxisId="left"
-                        type="monotone"
-                        data={hourlyData}
-                        dataKey="energy_MWh"
-                        stroke={energyColor}
-                        name={`Turbine #${i + 1} Energy`}
-                        dot={false}
-                      />
-                      {/* <Line yAxisId="right" type="monotone" data={hourlyData} dataKey="wind_speed" stroke={windColor} strokeDasharray="5 5" name={`Turbine #${i + 1} Wind`} /> */}
-                    </React.Fragment>
+                    <Line
+                      key={w.id}
+                      yAxisId="left"
+                      type="monotone"
+                      data={hourlyData}
+                      dataKey="energy_MWh"
+                      stroke={energyColor}
+                      name={`Turbine #${i + 1} Energy`}
+                      dot={false}
+                    />
                   );
                 })}
               </LineChart>

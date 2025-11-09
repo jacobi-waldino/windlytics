@@ -127,7 +127,13 @@ export default function MapSelectionApp() {
       } else {
         setWindmills((prev) => [
           ...prev,
-          { id: Date.now(), lat: e.latlng.lat, lng: e.latlng.lng, type: "", result: null },
+          {
+            id: Date.now(),
+            lat: e.latlng.lat,
+            lng: e.latlng.lng,
+            type: "",
+            result: null,
+          },
         ]);
       }
     }, 200),
@@ -148,7 +154,10 @@ export default function MapSelectionApp() {
   const runSimulation = async () => {
     if (!startDate || !endDate) return;
     if (endDate < startDate) {
-      setSnackbar({ open: true, message: "End date cannot be before start date" });
+      setSnackbar({
+        open: true,
+        message: "End date cannot be before start date",
+      });
       return;
     }
     setLoading(true);
@@ -179,7 +188,10 @@ export default function MapSelectionApp() {
         updated.push({ ...w, result: { ...data, ...model } });
       } catch (err) {
         updated.push({ ...w, result: { error: err.message } });
-        setSnackbar({ open: true, message: `Simulation API error: ${err.message}` });
+        setSnackbar({
+          open: true,
+          message: `Simulation API error: ${err.message}`,
+        });
       }
     }
     setWindmills(updated);
@@ -200,7 +212,14 @@ export default function MapSelectionApp() {
       {/* Main container: flex layout */}
       <Box sx={{ display: "flex", flexGrow: 1, minHeight: 0 }}>
         {/* Map */}
-        <Box sx={{ flex: 2, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <Box
+          sx={{
+            flex: 2,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <MapContainer
             bounds={novaScotiaBounds}
             maxBounds={novaScotiaBounds}
@@ -215,11 +234,56 @@ export default function MapSelectionApp() {
 
             {showBanks && (
               <>
-                <Circle center={[43.8, -61.0]} radius={40000} pathOptions={{ color: "red", weight: 3, opacity: 0.8, fill: false }} />
-                <Circle center={[44.5, -60.5]} radius={35000} pathOptions={{ color: "red", weight: 3, opacity: 0.8, fill: false }} />
-                <Circle center={[44.5, -61.5]} radius={35000} pathOptions={{ color: "red", weight: 3, opacity: 0.8, fill: false }} />
-                <Circle center={[43.5, -62.2]} radius={55000} pathOptions={{ color: "red", weight: 3, opacity: 0.8, fill: false }} />
-                <Circle center={[46.652568625714245, -59.5086061894759]} radius={35000} pathOptions={{ color: "red", weight: 3, opacity: 0.8, fill: false }} />
+                <Circle
+                  center={[43.8, -61.0]}
+                  radius={40000}
+                  pathOptions={{
+                    color: "red",
+                    weight: 3,
+                    opacity: 0.8,
+                    fill: false,
+                  }}
+                />
+                <Circle
+                  center={[44.5, -60.5]}
+                  radius={35000}
+                  pathOptions={{
+                    color: "red",
+                    weight: 3,
+                    opacity: 0.8,
+                    fill: false,
+                  }}
+                />
+                <Circle
+                  center={[44.5, -61.5]}
+                  radius={35000}
+                  pathOptions={{
+                    color: "red",
+                    weight: 3,
+                    opacity: 0.8,
+                    fill: false,
+                  }}
+                />
+                <Circle
+                  center={[43.5, -62.2]}
+                  radius={55000}
+                  pathOptions={{
+                    color: "red",
+                    weight: 3,
+                    opacity: 0.8,
+                    fill: false,
+                  }}
+                />
+                <Circle
+                  center={[46.652568625714245, -59.5086061894759]}
+                  radius={35000}
+                  pathOptions={{
+                    color: "red",
+                    weight: 3,
+                    opacity: 0.8,
+                    fill: false,
+                  }}
+                />
               </>
             )}
 
@@ -234,13 +298,33 @@ export default function MapSelectionApp() {
                 eventHandlers={{
                   click: () => removeWindmill(w.id),
                   keydown: (e) => {
-                    if (e.originalEvent.key === "Enter" || e.originalEvent.key === " ") removeWindmill(w.id);
+                    if (
+                      e.originalEvent.key === "Enter" ||
+                      e.originalEvent.key === " "
+                    )
+                      removeWindmill(w.id);
                   },
                 }}
-                aria-label={`Wind turbine #${i + 1} at latitude ${w.lat.toFixed(3)}, longitude ${w.lng.toFixed(3)}`}
+                aria-label={`Wind turbine #${i + 1} at latitude ${w.lat.toFixed(
+                  3
+                )}, longitude ${w.lng.toFixed(3)}`}
               >
-                <Tooltip direction="top" offset={[0, -20]} permanent opacity={0.9}>
-                  <Typography component="span" variant="body2" sx={{ fontWeight: 700, fontSize: 14, color: "#1976d2", textShadow: "0 1px 2px white" }}>
+                <Tooltip
+                  direction="top"
+                  offset={[0, -20]}
+                  permanent
+                  opacity={0.9}
+                >
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: 14,
+                      color: "#1976d2",
+                      textShadow: "0 1px 2px white",
+                    }}
+                  >
                     {i + 1} - Wind turbine marker
                   </Typography>
                 </Tooltip>
@@ -268,17 +352,39 @@ export default function MapSelectionApp() {
               alignItems: "center",
               justifyContent: "center",
               boxShadow: 1,
-              "&:hover": { backgroundColor: "#f0f0f0", transform: "scale(1.05)" },
+              "&:hover": {
+                backgroundColor: "#f0f0f0",
+                transform: "scale(1.05)",
+              },
             }}
           >
-            <Box sx={{ width: 16, height: 16, borderRadius: "50%", backgroundColor: showBanks ? "red" : "grey" }} />
+            <Box
+              sx={{
+                width: 16,
+                height: 16,
+                borderRadius: "50%",
+                backgroundColor: showBanks ? "red" : "grey",
+              }}
+            />
           </Button>
         </Box>
 
         {/* Sidebar */}
-        <Box sx={{ flex: 1.2, display: "flex", flexDirection: "column", backgroundColor: "#fafafa", borderLeft: "1px solid #ddd", minHeight: 0 }}>
+        <Box
+          sx={{
+            flex: 1.2,
+            display: "flex",
+            flexDirection: "column",
+            backgroundColor: "#fafafa",
+            borderLeft: "1px solid #ddd",
+            minHeight: 0,
+          }}
+        >
           <Box sx={{ flexGrow: 1, overflowY: "auto", p: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "primary.main" }}>
+            <Typography
+              variant="h6"
+              sx={{ mb: 2, fontWeight: 600, color: "primary.main" }}
+            >
               Wind Turbine Placement
             </Typography>
 
@@ -292,17 +398,36 @@ export default function MapSelectionApp() {
               {windmills.map((w, i) => {
                 const details = windmillDict[w.type];
                 return (
-                  <Card key={w.id} variant="outlined" sx={{ mb: 2, borderRadius: 2, background: "white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", display: "flex", justifyContent: "space-between", alignItems: "flex-start", p: 1 }}>
+                  <Card
+                    key={w.id}
+                    variant="outlined"
+                    sx={{
+                      mb: 2,
+                      borderRadius: 2,
+                      background: "white",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      p: 1,
+                    }}
+                  >
                     <Box sx={{ flex: 1 }}>
                       <ListItem
                         secondaryAction={
-                          <IconButton edge="end" onClick={() => removeWindmill(w.id)} aria-label={`Remove turbine #${i + 1}`}>
+                          <IconButton
+                            edge="end"
+                            onClick={() => removeWindmill(w.id)}
+                            aria-label={`Remove turbine #${i + 1}`}
+                          >
                             <DeleteIcon />
                           </IconButton>
                         }
                       >
                         <ListItemText
-                          primary={`Turbine #${i + 1}: (${w.lat.toFixed(3)}, ${w.lng.toFixed(3)})`}
+                          primary={`Turbine #${i + 1}: (${w.lat.toFixed(
+                            3
+                          )}, ${w.lng.toFixed(3)})`}
                         />
                         <Select
                           labelId={`windmill-type-label-${w.id}`}
@@ -327,20 +452,45 @@ export default function MapSelectionApp() {
                         <>
                           <Divider />
                           <Box sx={{ p: 2 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                            <Typography
+                              variant="subtitle1"
+                              sx={{ fontWeight: 600, mb: 0.5 }}
+                            >
                               {details.company}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ mb: 1 }}
+                            >
                               {details.message}
                             </Typography>
 
                             <Box sx={{ fontSize: 14 }}>
-                              <Typography variant="body2"><strong>Rated Power:</strong> {details.rated_power.toLocaleString()} kW</Typography>
-                              <Typography variant="body2"><strong>Rotor Diameter:</strong> {details.rotor_diameter} m</Typography>
-                              <Typography variant="body2"><strong>Tip Height:</strong> {details.tip_height} m</Typography>
-                              <Typography variant="body2"><strong>Cut-in Speed:</strong> {details.cut_in} m/s</Typography>
-                              <Typography variant="body2"><strong>Rated Speed:</strong> {details.rated} m/s</Typography>
-                              <Typography variant="body2"><strong>Cut-out Speed:</strong> {details.cut_out} m/s</Typography>
+                              <Typography variant="body2">
+                                <strong>Rated Power:</strong>{" "}
+                                {details.rated_power.toLocaleString()} kW
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Rotor Diameter:</strong>{" "}
+                                {details.rotor_diameter} m
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Tip Height:</strong>{" "}
+                                {details.tip_height} m
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Cut-in Speed:</strong> {details.cut_in}{" "}
+                                m/s
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Rated Speed:</strong> {details.rated}{" "}
+                                m/s
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Cut-out Speed:</strong>{" "}
+                                {details.cut_out} m/s
+                              </Typography>
                             </Box>
                           </Box>
                         </>
@@ -352,7 +502,15 @@ export default function MapSelectionApp() {
             </List>
           </Box>
 
-          <Box sx={{ p: 2, borderTop: "1px solid #ddd", display: "flex", flexDirection: "column", gap: 2 }}>
+          <Box
+            sx={{
+              p: 2,
+              borderTop: "1px solid #ddd",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DatePicker
                 label="Start Date"
@@ -373,9 +531,17 @@ export default function MapSelectionApp() {
               color="primary"
               sx={{ borderRadius: 3 }}
               onClick={runSimulation}
-              disabled={loading || windmills.length === 0 || !windmills.every((w) => w.type !== "")}
+              disabled={
+                loading ||
+                windmills.length === 0 ||
+                !windmills.every((w) => w.type !== "")
+              }
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : "Run Simulation"}
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                "Run Simulation"
+              )}
             </Button>
 
             <Button
@@ -383,7 +549,10 @@ export default function MapSelectionApp() {
               color="secondary"
               sx={{ borderRadius: 3 }}
               onClick={() => setOpenModal(true)}
-              disabled={!windmills.some((w) => w.result) || windmills.some((w) => w.type === "")}
+              disabled={
+                !windmills.some((w) => w.result) ||
+                windmills.some((w) => w.type === "")
+              }
             >
               Reopen Simulation Results
             </Button>
@@ -391,7 +560,11 @@ export default function MapSelectionApp() {
         </Box>
       </Box>
 
-      <SimulationModal open={openModal} onClose={() => setOpenModal(false)} windmills={windmills} />
+      <SimulationModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        windmills={windmills}
+      />
 
       <Snackbar
         open={snackbar.open}
@@ -399,7 +572,11 @@ export default function MapSelectionApp() {
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity="error" sx={{ width: "100%" }}>
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity="error"
+          sx={{ width: "100%" }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
