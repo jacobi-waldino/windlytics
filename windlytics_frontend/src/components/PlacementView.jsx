@@ -1,5 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Rectangle, Marker } from "react-leaflet";
+import React, { useState, useCallback } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Tooltip,
+  useMapEvents,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import {
@@ -8,139 +14,164 @@ import {
   Toolbar,
   Typography,
   Card,
-  CardContent,
-  Divider,
   Button,
   List,
   ListItem,
   ListItemText,
   IconButton,
+  MenuItem,
+  Select,
+  Divider,
+  CircularProgress,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import SquareSelector from "./SquareSelector";
-import NumberInput from "./NumberInput";
-import townsData from "../data/nova_scotia_towns.json";
-
-// Optional: simple marker icon fix for leaflet default icon
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
+import windmillSVG from "../assets/windmill.svg";
 
 const windmillIcon = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/69/69407.png", // windmill PNG
-  iconRetinaUrl: "https://cdn-icons-png.flaticon.com/512/69/69407.png",
-  iconSize: [32, 32], // size of the icon
-  iconAnchor: [16, 32], // point of the icon which will correspond to marker's location
+  iconUrl: windmillSVG,
+  iconRetinaUrl: windmillSVG,
+  iconSize: [32, 32],
+  iconAnchor: [16, 24],
   popupAnchor: [0, -32],
-  shadowUrl: null, // no shadow for simplicity
+  shadowUrl: null,
 });
 
-export default function MapSelectionApp() {
-  const [box, setBox] = useState(null);
-  const [points, setPoints] = useState([]); // holds generated points
-  const [chosenInt, setChosenInt] = useState(5); // example number input
-  const [towns, setTowns] = useState([]);
-  const [adminRegion, setAdminRegion] = useState({ state: "", country: "" });
-  const [showAllTowns, setShowAllTowns] = useState(false);
+const windmillDict = {
+  "SWT-7.0-154": {
+    company: "Siemens Gamesa Renewable Energy",
+    message: "Model with most units operational at sea",
+    cut_in: 3.0,
+    rated: 13.0,
+    cut_out: 25.0,
+    rated_power: 7000.0,
+    rotor_diameter: 154,
+    tip_height: 180,
+  },
+  "GE Haliade-X 13 MW": {
+    company: "GE Renewable Energy",
+    message:
+      "Largest order to date – 277 units with a power output of 13 and 14 MW",
+    cut_in: 3.0,
+    rated: 11.0,
+    cut_out: 34.0,
+    rated_power: 13000.0,
+    rotor_diameter: 220,
+    tip_height: 260,
+  },
+  "GE Haliade-X 14 MW": {
+    company: "GE Renewable Energy",
+    message:
+      "Largest order to date – 277 units with a power output of 13 and 14 MW",
+    cut_in: 3.0,
+    rated: 11.0,
+    cut_out: 34.0,
+    rated_power: 14000.0,
+    rotor_diameter: 220,
+    tip_height: 260,
+  },
+  "SG 14-222 DD": {
+    company: "Siemens Gamesa Renewable Energy",
+    message: "Largest turbine ordered",
+    cut_in: 3.0,
+    rated: 12.0,
+    cut_out: 32.0,
+    rated_power: 14000.0,
+    rotor_diameter: 222,
+    tip_height: 260,
+  },
+};
 
+// debounce helper
+function debounce(fn, delay) {
+  let timeout;
+  return (...args) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+}
+
+export default function MapSelectionApp() {
   const novaScotiaBounds = [
     [43.3, -66.4],
     [47.1, -59.6],
   ];
 
-  useEffect(() => {
-    if (!box) return;
+  const [windmills, setWindmills] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-    const [[latSW, lngSW], [latNE, lngNE]] = box.bounds;
+  const handleMapClick = useCallback(
+    debounce((e) => {
+      const existing = windmills.find(
+        (w) =>
+          Math.abs(w.lat - e.latlng.lat) < 0.0001 &&
+          Math.abs(w.lng - e.latlng.lng) < 0.0001
+      );
 
-    const nearbyTowns = townsData
-      .filter(
-        (t) =>
-          t.lat >= latSW && t.lat <= latNE && t.lng >= lngSW && t.lng <= lngNE
-      )
-      .map((t) => t.name);
-
-    setTowns(nearbyTowns);
-    setAdminRegion({ state: "Nova Scotia", country: "Canada" });
-  }, [box]);
-
-  const getAreaString = () => {
-    if (!box) return "";
-    const latSW = box.bounds[0][1];
-    const latNE = box.bounds[1][1];
-    const lngSW = box.bounds[0][0];
-    const lngNE = box.bounds[1][0];
-
-    const dLat = latNE - latSW;
-    const dLng = lngNE - lngSW;
-    const kmPerDegLat = 111;
-    const kmPerDegLng = 111 * Math.cos((((latSW + latNE) / 2) * Math.PI) / 180);
-    const heightKm = kmPerDegLat * dLat;
-    const widthKm = kmPerDegLng * dLng;
-    const areaKm2 = widthKm * heightKm;
-    return `${areaKm2.toFixed(2)} km² (≈ ${widthKm.toFixed(
-      2
-    )} × ${heightKm.toFixed(2)} km)`;
-  };
-
-  const handleAddBox = (bounds) => {
-    setBox({ id: 1, bounds });
-    setPoints([]); // reset points when selecting new area
-  };
-
-  const handleDeleteBox = () => {
-    setBox(null);
-    setPoints([]);
-  };
-
-  const handleConfirm = async () => {
-    if (!box) {
-      console.log("No box selected.");
-      return;
-    }
-
-    const [[swLng, swLat], [neLng, neLat]] = box.bounds; // Leaflet bounds: [ [lng, lat], [lng, lat] ]
-
-    console.log("Confirm clicked!");
-    console.log("Box SW/NE:", swLat, swLng, neLat, neLng);
-    console.log("Number of points requested:", chosenInt);
-
-    const payload = {
-      sw_lat: swLat,
-      sw_lng: swLng,
-      ne_lat: neLat,
-      ne_lng: neLng,
-      chosen_int: chosenInt,
-    };
-    console.log("Payload sent to Flask:", payload);
-
-    try {
-      const response = await fetch("http://127.0.0.1:5000/find-placements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      console.log("Response received:", response);
-
-      const data = await response.json();
-      console.log("Response JSON:", data);
-
-      if (data.status === "success") {
-        console.log("Points generated:", data.points);
-        setPoints(data.points);
+      if (existing) {
+        setWindmills((prev) => prev.filter((w) => w !== existing));
       } else {
-        console.error("Error generating points:", data.message);
+        setWindmills((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            lat: e.latlng.lat,
+            lng: e.latlng.lng,
+            type: "",
+            result: null,
+          },
+        ]);
       }
-    } catch (err) {
-      console.error("Network error:", err);
+    }, 200),
+    [windmills]
+  );
+
+  function MapClickHandler() {
+    useMapEvents({ click: handleMapClick });
+    return null;
+  }
+
+  const updateType = (id, type) =>
+    setWindmills((prev) =>
+      prev.map((w) => (w.id === id ? { ...w, type } : w))
+    );
+
+  const removeWindmill = (id) =>
+    setWindmills((prev) => prev.filter((w) => w.id !== id));
+
+  // 🧮 Run simulation for all turbines
+  const runSimulation = async () => {
+    setLoading(true);
+    const updated = [];
+
+    for (const w of windmills) {
+      const model = windmillDict[w.type];
+      if (!model) continue;
+
+      try {
+        const response = await fetch("http://127.0.0.1:5000/generated-energy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cut_in: model.cut_in,
+            rated: model.rated,
+            cut_out: model.cut_out,
+            rated_power: model.rated_power,
+            latitude: w.lat,
+            longitude: w.lng,
+            days: 7, // simulate 1 week
+          }),
+        });
+
+        const data = await response.json();
+        updated.push({ ...w, result: data });
+      } catch (err) {
+        console.error("Simulation error:", err);
+        updated.push({ ...w, result: { error: "Failed to fetch data" } });
+      }
     }
+
+    setWindmills(updated);
+    setLoading(false);
   };
 
   return (
@@ -153,172 +184,189 @@ export default function MapSelectionApp() {
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ display: "flex", flexGrow: 1 }}>
-        {/* Map Section */}
-        <Box sx={{ flex: 3, position: "relative" }}>
+      <Box sx={{ display: "flex", flexGrow: 1, minHeight: 0 }}>
+        {/* Map */}
+        <Box sx={{ flex: 2 }}>
           <MapContainer
             bounds={novaScotiaBounds}
-            // maxBounds={novaScotiaBounds}
-            // maxBoundsViscosity={1.0}
-            // minZoom={8}
+            maxBounds={novaScotiaBounds}
+            maxBoundsViscosity={1.0}
+            minZoom={8}
             style={{ height: "100%", width: "100%" }}
           >
             <TileLayer
               attribution='&copy; <a href="https://osm.org">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            <MapClickHandler />
 
-            <SquareSelector onSelect={handleAddBox} />
-
-            {box && (
-              <Rectangle
-                bounds={box.bounds}
-                pathOptions={{ color: "#1976d2", weight: 2, fillOpacity: 0.1 }}
-                eventHandlers={{
-                  click: (e) => {
-                    e.originalEvent.stopPropagation();
-                    handleDeleteBox();
-                  },
-                }}
-              />
-            )}
-
-            {points.map((p, idx) => {
-              console.log(`Marker ${idx}:`, p);
-              return <Marker icon={windmillIcon} key={idx} position={[p.lat, p.lng]} />;
-            })}
+            {windmills.map((w, i) => (
+              <Marker
+                key={w.id}
+                position={[w.lat, w.lng]}
+                icon={windmillIcon}
+                eventHandlers={{ click: () => removeWindmill(w.id) }}
+              >
+                <Tooltip direction="top" offset={[0, -20]} permanent opacity={0.9}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: 14,
+                      color: "#1976d2",
+                      textShadow: "0 1px 2px white",
+                    }}
+                  >
+                    {i + 1}
+                  </Typography>
+                </Tooltip>
+              </Marker>
+            ))}
           </MapContainer>
         </Box>
 
-        {/* Info Panel */}
+        {/* Sidebar */}
         <Box
           sx={{
-            flex: 1,
-            backgroundColor: "#fafafa",
-            borderLeft: "1px solid #ddd",
-            p: 2,
+            flex: 1.2,
             display: "flex",
             flexDirection: "column",
-            justifyContent: "space-between",
+            backgroundColor: "#fafafa",
+            borderLeft: "1px solid #ddd",
           }}
         >
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-              mb: 2,
-              background: "white",
-              flexGrow: 1,
-              overflowY: "auto",
-            }}
-          >
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Placement Generator
+          <Box sx={{ flexGrow: 1, overflowY: "auto", p: 2 }}>
+            <Typography
+              variant="h6"
+              sx={{ mb: 2, fontWeight: 600, color: "primary.main" }}
+            >
+              Windmill Placement
+            </Typography>
+
+            {windmills.length === 0 && (
+              <Typography variant="body2" color="text.secondary">
+                Click anywhere on the map to place a windmill.
               </Typography>
-              <Divider sx={{ mb: 2 }} />
-              {box ? (
-                <List dense>
-                  <ListItem
-                    secondaryAction={
-                      <IconButton
-                        edge="end"
-                        aria-label="delete"
-                        onClick={handleDeleteBox}
-                      >
-                        <DeleteIcon color="error" />
-                      </IconButton>
-                    }
+            )}
+
+            <List>
+              {windmills.map((w, i) => {
+                const details = windmillDict[w.type];
+                return (
+                  <Card
+                    key={w.id}
+                    variant="outlined"
+                    sx={{
+                      mb: 2,
+                      borderRadius: 2,
+                      background: "white",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      p: 1,
+                    }}
                   >
-                    <ListItemText
-                      primary={`Selected Area`}
-                      secondary={
+                    <Box sx={{ flex: 1 }}>
+                      <ListItem
+                        secondaryAction={
+                          <IconButton
+                            edge="end"
+                            onClick={() => removeWindmill(w.id)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        }
+                      >
+                        <ListItemText
+                          primary={`Turbine #${i + 1}: (${w.lat.toFixed(
+                            3
+                          )}, ${w.lng.toFixed(3)})`}
+                        />
+                        <Select
+                          value={w.type}
+                          onChange={(e) => updateType(w.id, e.target.value)}
+                          displayEmpty
+                          size="small"
+                          sx={{ minWidth: 200 }}
+                        >
+                          <MenuItem value="">
+                            <em>Select Model</em>
+                          </MenuItem>
+                          {Object.keys(windmillDict).map((key) => (
+                            <MenuItem key={key} value={key}>
+                              {key}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </ListItem>
+
+                      {details && (
                         <>
-                          SW: {box.bounds[0][0].toFixed(5)},{" "}
-                          {box.bounds[0][1].toFixed(5)} <br />
-                          NE: {box.bounds[1][0].toFixed(5)},{" "}
-                          {box.bounds[1][1].toFixed(5)}
+                          <Divider />
+                          <Box sx={{ p: 2 }}>
+                            <Typography
+                              variant="subtitle1"
+                              sx={{ fontWeight: 600, mb: 0.5 }}
+                            >
+                              {details.company}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ mb: 1 }}
+                            >
+                              {details.message}
+                            </Typography>
+
+                            <Box sx={{ fontSize: 14 }}>
+                            <Typography variant="body2">
+                              <strong>Rated Power:</strong>{" "}
+                              {details.rated_power.toLocaleString()} kW
+                            </Typography>
+                            <Typography variant="body2">
+                              <strong>Rotor Diameter:</strong>{" "}
+                              {details.rotor_diameter} m
+                            </Typography>
+                            <Typography variant="body2">
+                              <strong>Tip Height:</strong>{" "}
+                              {details.tip_height} m
+                            </Typography>
+                            <Typography variant="body2">
+                              <strong>Cut-in Speed:</strong>{" "}
+                              {details.cut_in} m/s
+                            </Typography>
+                            <Typography variant="body2">
+                              <strong>Rated Speed:</strong>{" "}
+                              {details.rated} m/s
+                            </Typography>
+                            <Typography variant="body2">
+                              <strong>Cut-out Speed:</strong>{" "}
+                              {details.cut_out} m/s
+                            </Typography>
+                          </Box>
+                          </Box>
                         </>
-                      }
-                    />
-                  </ListItem>
+                      )}
+                    </Box>
+                  </Card>
+                );
+              })}
+            </List>
+          </Box>
 
-                  <ListItem>
-                    <ListItemText
-                      primary={`Centroid`}
-                      secondary={`${(
-                        (box.bounds[0][1] + box.bounds[1][1]) /
-                        2
-                      ).toFixed(5)}, ${(
-                        (box.bounds[0][0] + box.bounds[1][0]) /
-                        2
-                      ).toFixed(5)}`}
-                    />
-                  </ListItem>
-
-                  <ListItem>
-                    <ListItemText
-                      primary={`Approximate Size`}
-                      secondary={getAreaString()}
-                    />
-                  </ListItem>
-
-                  <ListItem>
-                    <ListItemText
-                      primary={`Administrative Region`}
-                      secondary={`${adminRegion.state}, ${adminRegion.country}`}
-                    />
-                  </ListItem>
-
-                  <ListItem>
-                    <ListItemText
-                      primary="Nearby Towns / Cities"
-                      secondary={
-                        towns.length === 0 ? (
-                          "None in selection"
-                        ) : (
-                          <>
-                            {showAllTowns
-                              ? towns.join(", ")
-                              : towns.slice(0, 5).join(", ")}
-                            {towns.length > 5 && (
-                              <Button
-                                size="small"
-                                onClick={() => setShowAllTowns(!showAllTowns)}
-                                sx={{ ml: 1, textTransform: "none" }}
-                              >
-                                {showAllTowns ? "Show less" : "Show more"}
-                              </Button>
-                            )}
-                          </>
-                        )
-                      }
-                    />
-                  </ListItem>
-
-                  <ListItem>
-                    <NumberInput value={chosenInt} onChange={setChosenInt} />
-                  </ListItem>
-                </List>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  Click two points on the map to create a single square area.
-                  Click the blue box or 🗑️ to delete it.
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-
-          <Button
-            variant="contained"
-            color="primary"
-            disabled={!box}
-            sx={{ borderRadius: 3, py: 1.2 }}
-            onClick={handleConfirm}
-          >
-            Confirm Selection
-          </Button>
+          <Box sx={{ p: 2, borderTop: "1px solid #ddd" }}>
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              sx={{ borderRadius: 3, py: 1.2 }}
+              onClick={runSimulation}
+              disabled={loading || windmills.length === 0}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : "Run Simulation"}
+            </Button>
+          </Box>
         </Box>
       </Box>
     </Box>
