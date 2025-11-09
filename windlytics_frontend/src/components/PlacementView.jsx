@@ -5,6 +5,7 @@ import {
   Marker,
   Tooltip,
   useMapEvents,
+  Circle,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -105,6 +106,7 @@ export default function MapSelectionApp() {
   const [windmills, setWindmills] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openModal, setOpenModal] = useState(false);
+  const [showBanks, setShowBanks] = useState(true);
 
   // Default start/end dates
   const today = new Date();
@@ -226,18 +228,77 @@ export default function MapSelectionApp() {
 
       <Box sx={{ display: "flex", flexGrow: 1, minHeight: 0 }}>
         {/* Map */}
-        <Box sx={{ flex: 2 }}>
+        <Box sx={{ flex: 2, position: "relative" }}>
           <MapContainer
             bounds={novaScotiaBounds}
             maxBounds={novaScotiaBounds}
             maxBoundsViscosity={1.0}
-            minZoom={8}
+            minZoom={7}
             style={{ height: "100%", width: "100%" }}
           >
             <TileLayer
               attribution='&copy; <a href="https://osm.org">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            {/* Sable Island Bank - Red Outline */}
+            {showBanks && (
+              <>
+                <Circle
+                  center={[43.8, -61.0]}
+                  radius={40000}
+                  pathOptions={{
+                    color: "red",
+                    weight: 3,
+                    opacity: 0.8,
+                    fill: false,
+                  }}
+                />
+                {/* French Bank - Red Outline */}
+                <Circle
+                  center={[44.5, -60.5]}
+                  radius={35000}
+                  pathOptions={{
+                    color: "red",
+                    weight: 3,
+                    opacity: 0.8,
+                    fill: false,
+                  }}
+                />
+                {/* French Bank Part 2 - Red Outline */}
+                <Circle
+                  center={[44.5, -61.5]}
+                  radius={35000}
+                  pathOptions={{
+                    color: "red",
+                    weight: 3,
+                    opacity: 0.8,
+                    fill: false,
+                  }}
+                />
+                {/* Emerald Bank - Red Outline */}
+                <Circle
+                  center={[43.5, -62.2]}
+                  radius={55000}
+                  pathOptions={{
+                    color: "red",
+                    weight: 3,
+                    opacity: 0.8,
+                    fill: false,
+                  }}
+                />
+                {/* Sydney Bight - Red Outline */}
+                <Circle
+                  center={[46.652568625714245, -59.5086061894759]}
+                  radius={35000}
+                  pathOptions={{
+                    color: "red",
+                    weight: 3,
+                    opacity: 0.8,
+                    fill: false,
+                  }}
+                />
+              </>
+            )}
             <MapClickHandler />
 
             {windmills.map((w, i) => (
@@ -268,6 +329,25 @@ export default function MapSelectionApp() {
               </Marker>
             ))}
           </MapContainer>
+          {/* Toggle Banks Button */}
+          <Button
+            onClick={() => setShowBanks(!showBanks)}
+            sx={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              zIndex: 400,
+              backgroundColor: "white",
+              color: "primary.main",
+              border: "1px solid #ddd",
+              fontWeight: 600,
+              "&:hover": {
+                backgroundColor: "#f5f5f5",
+              },
+            }}
+          >
+            {showBanks ? "Hide Banks" : "Show Banks"}
+          </Button>
         </Box>
 
         {/* Sidebar */}
