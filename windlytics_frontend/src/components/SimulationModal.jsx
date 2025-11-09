@@ -8,7 +8,10 @@ import {
   Box,
   Typography,
   Button,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
   LineChart,
   Line,
@@ -120,24 +123,40 @@ export default function SimulationModal({ open, onClose, windmills }) {
                       {summary.totalEnergy.toLocaleString()} MWh
                     </Typography>
                     <Typography variant="subtitle2" color="text.secondary">
-                      <i>
-                        Aggregate (all turbines):{" "}</i>
-                        {getAggregateSummary().totalEnergy.toLocaleString()} MWh
-                      
+                      <i>Aggregate (all turbines): </i>
+                      {getAggregateSummary().totalEnergy.toLocaleString()} MWh
                     </Typography>
                     <Typography variant="h6">
                       <b>Potential Revenue:</b> ${summary.revenue}
                     </Typography>
                     <Typography variant="subtitle2" color="text.secondary">
-                      <i>
-                        Aggregate (all turbines):</i> $
-                        {getAggregateSummary().revenue}
-                      
+                      <i>Aggregate (all turbines):</i> $
+                      {getAggregateSummary().revenue}
                     </Typography>
                   </Box>
                 );
               })()}
-
+            {/* Tooltip at top-right */}
+        <Tooltip
+          title={
+            <Typography sx={{ fontSize: 16 }}>
+              <b>Cut-in Wind Speed:</b> The minimum wind speed at which the
+              turbine starts generating power.
+              <br />
+              <b>Rated Wind Speed:</b> The wind speed at which the turbine
+              generates its maximum (rated) power.
+              <br />
+              <b>Cut-out Wind Speed:</b> The wind speed above which the turbine
+              stops to prevent damage.
+            </Typography>
+          }
+          placement="top"
+          arrow
+        >
+          <IconButton size="small">
+            <InfoOutlinedIcon fontSize="medium" />
+          </IconButton>
+        </Tooltip>
             {windmills[activeTab] && windmills[activeTab].result ? (
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={getHourlyData(windmills[activeTab])}>

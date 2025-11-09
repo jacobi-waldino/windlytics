@@ -337,16 +337,34 @@ export default function MapSelectionApp() {
               top: 16,
               right: 16,
               zIndex: 400,
-              backgroundColor: "white",
-              color: "primary.main",
-              border: "1px solid #ddd",
-              fontWeight: 600,
+              minWidth: 0,
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              backgroundColor: "#fff",
+              border: "2px solid #ddd",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: 1,
+              transition: "all 0.3s ease",
               "&:hover": {
-                backgroundColor: "#f5f5f5",
+                backgroundColor: "#f0f0f0",
+                transform: "scale(1.05)",
+                boxShadow: 3,
               },
             }}
           >
-            {showBanks ? "Hide Banks" : "Show Banks"}
+            {/* Inner circle */}
+            <Box
+              sx={{
+                width: 16,
+                height: 16,
+                borderRadius: "50%",
+                backgroundColor: showBanks ? "red" : "grey",
+                transition: "background-color 0.3s ease",
+              }}
+            />
           </Button>
         </Box>
 
