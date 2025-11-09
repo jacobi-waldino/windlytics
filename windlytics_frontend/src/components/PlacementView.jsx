@@ -24,6 +24,8 @@ import {
   Divider,
   CircularProgress,
   TextField,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -102,7 +104,6 @@ export default function MapSelectionApp() {
 
   const [windmills, setWindmills] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [simulationDays, setSimulationDays] = useState(7);
   const [openModal, setOpenModal] = useState(false);
 
   // Default start/end dates
@@ -112,6 +113,11 @@ export default function MapSelectionApp() {
 
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(nextWeek);
+  const [apiError, setApiError] = useState(null);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+  });
 
   const handleMapClick = useCallback(
     debounce((e) => {
@@ -159,6 +165,7 @@ export default function MapSelectionApp() {
     }
 
     setLoading(true);
+    setApiError(null);
     const updated = [];
 
     for (const w of windmills) {
@@ -194,6 +201,10 @@ export default function MapSelectionApp() {
       } catch (err) {
         console.error("Simulation error:", err);
         updated.push({ ...w, result: { error: err.message } });
+        setSnackbar({
+          open: true,
+          message: `Simulation API error: ${err.message}`,
+        });
       }
     }
 
@@ -274,7 +285,7 @@ export default function MapSelectionApp() {
               variant="h6"
               sx={{ mb: 2, fontWeight: 600, color: "primary.main" }}
             >
-              Windmill Placement
+              Wind Turbine Placement
             </Typography>
 
             {windmills.length === 0 && (
@@ -418,13 +429,30 @@ export default function MapSelectionApp() {
               color="primary"
               sx={{ borderRadius: 3 }}
               onClick={runSimulation}
-              disabled={loading || windmills.length === 0}
+              disabled={
+                loading ||
+                windmills.length === 0 ||
+                !windmills.every((w) => w.type !== "")
+              }
             >
               {loading ? (
                 <CircularProgress size={24} color="inherit" />
               ) : (
                 "Run Simulation"
               )}
+            </Button>
+
+            <Button
+              variant="outlined"
+              color="secondary"
+              sx={{ borderRadius: 3 }}
+              onClick={() => setOpenModal(true)}
+              disabled={
+                !windmills.some((w) => w.result) ||
+                windmills.some((w) => w.type === "")
+              }
+            >
+              Reopen Simulation Results
             </Button>
           </Box>
         </Box>
@@ -434,6 +462,20 @@ export default function MapSelectionApp() {
         onClose={() => setOpenModal(false)}
         windmills={windmills}
       />
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={5000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity="error"
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
