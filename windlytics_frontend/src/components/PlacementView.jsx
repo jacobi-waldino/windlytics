@@ -25,6 +25,8 @@ import {
   CircularProgress,
   TextField,
 } from "@mui/material";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import DeleteIcon from "@mui/icons-material/Delete";
 import windmillSVG from "../assets/windmill.svg";
 import SimulationModal from "./SimulationModal";
@@ -103,6 +105,14 @@ export default function MapSelectionApp() {
   const [simulationDays, setSimulationDays] = useState(7);
   const [openModal, setOpenModal] = useState(false);
 
+  // Default start/end dates
+  const today = new Date();
+  const nextWeek = new Date();
+  nextWeek.setDate(today.getDate() + 7);
+
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(nextWeek);
+
   const handleMapClick = useCallback(
     debounce((e) => {
       const existing = windmills.find(
@@ -142,6 +152,12 @@ export default function MapSelectionApp() {
 
   // 🧮 Run simulation for all turbines
   const runSimulation = async () => {
+    if (!startDate || !endDate) return;
+    if (endDate < startDate) {
+      alert("End date cannot be before start date");
+      return;
+    }
+
     setLoading(true);
     const updated = [];
 
@@ -160,25 +176,27 @@ export default function MapSelectionApp() {
             rated_power: model.rated_power,
             latitude: w.lat,
             longitude: w.lng,
-            days: simulationDays,
+            start_date: startDate.toISOString().split("T")[0],
+            end_date: endDate.toISOString().split("T")[0],
           }),
         });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || "API request failed");
+        }
 
         const data = await response.json();
         updated.push({
           ...w,
-          result: {
-            ...data,
-            ...model,
-          },
+          result: { ...data, ...model },
         });
       } catch (err) {
         console.error("Simulation error:", err);
-        updated.push({ ...w, result: { error: "Failed to fetch data" } });
+        updated.push({ ...w, result: { error: err.message } });
       }
     }
 
-    console.log(updated);
     setWindmills(updated);
     setLoading(false);
 
@@ -372,23 +390,33 @@ export default function MapSelectionApp() {
           </Box>
 
           <Box
-            sx={{ p: 2, borderTop: "1px solid #ddd", display: "flex", gap: 2 }}
+            sx={{
+              p: 2,
+              borderTop: "1px solid #ddd",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
           >
-            <TextField
-              type="number"
-              label="Days"
-              value={simulationDays}
-              onChange={(e) =>
-                setSimulationDays(Math.max(1, Number(e.target.value)))
-              }
-              size="small"
-              sx={{ width: 100, "& input": { textAlign: "center" } }}
-              inputProps={{ min: 1 }}
-            />
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DatePicker
+                label="Start Date"
+                value={startDate}
+                onChange={(newValue) => setStartDate(newValue)}
+                renderInput={(params) => <TextField {...params} size="small" />}
+              />
+              <DatePicker
+                label="End Date"
+                value={endDate}
+                onChange={(newValue) => setEndDate(newValue)}
+                renderInput={(params) => <TextField {...params} size="small" />}
+              />
+            </LocalizationProvider>
+
             <Button
               variant="contained"
               color="primary"
-              sx={{ borderRadius: 3, flexGrow: 1 }}
+              sx={{ borderRadius: 3 }}
               onClick={runSimulation}
               disabled={loading || windmills.length === 0}
             >
