@@ -23,9 +23,11 @@ import {
   Select,
   Divider,
   CircularProgress,
+  TextField,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import windmillSVG from "../assets/windmill.svg";
+import SimulationModal from "./SimulationModal";
 
 const windmillIcon = new L.Icon({
   iconUrl: windmillSVG,
@@ -98,6 +100,8 @@ export default function MapSelectionApp() {
 
   const [windmills, setWindmills] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [simulationDays, setSimulationDays] = useState(7);
+  const [openModal, setOpenModal] = useState(false);
 
   const handleMapClick = useCallback(
     debounce((e) => {
@@ -131,9 +135,7 @@ export default function MapSelectionApp() {
   }
 
   const updateType = (id, type) =>
-    setWindmills((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, type } : w))
-    );
+    setWindmills((prev) => prev.map((w) => (w.id === id ? { ...w, type } : w)));
 
   const removeWindmill = (id) =>
     setWindmills((prev) => prev.filter((w) => w.id !== id));
@@ -158,20 +160,29 @@ export default function MapSelectionApp() {
             rated_power: model.rated_power,
             latitude: w.lat,
             longitude: w.lng,
-            days: 7, // simulate 1 week
+            days: simulationDays,
           }),
         });
 
         const data = await response.json();
-        updated.push({ ...w, result: data });
+        updated.push({
+          ...w,
+          result: {
+            ...data,
+            ...model,
+          },
+        });
       } catch (err) {
         console.error("Simulation error:", err);
         updated.push({ ...w, result: { error: "Failed to fetch data" } });
       }
     }
 
+    console.log(updated);
     setWindmills(updated);
     setLoading(false);
+
+    if (updated.length > 0) setOpenModal(true);
   };
 
   return (
@@ -207,7 +218,12 @@ export default function MapSelectionApp() {
                 icon={windmillIcon}
                 eventHandlers={{ click: () => removeWindmill(w.id) }}
               >
-                <Tooltip direction="top" offset={[0, -20]} permanent opacity={0.9}>
+                <Tooltip
+                  direction="top"
+                  offset={[0, -20]}
+                  permanent
+                  opacity={0.9}
+                >
                   <Typography
                     variant="body2"
                     sx={{
@@ -320,31 +336,31 @@ export default function MapSelectionApp() {
                             </Typography>
 
                             <Box sx={{ fontSize: 14 }}>
-                            <Typography variant="body2">
-                              <strong>Rated Power:</strong>{" "}
-                              {details.rated_power.toLocaleString()} kW
-                            </Typography>
-                            <Typography variant="body2">
-                              <strong>Rotor Diameter:</strong>{" "}
-                              {details.rotor_diameter} m
-                            </Typography>
-                            <Typography variant="body2">
-                              <strong>Tip Height:</strong>{" "}
-                              {details.tip_height} m
-                            </Typography>
-                            <Typography variant="body2">
-                              <strong>Cut-in Speed:</strong>{" "}
-                              {details.cut_in} m/s
-                            </Typography>
-                            <Typography variant="body2">
-                              <strong>Rated Speed:</strong>{" "}
-                              {details.rated} m/s
-                            </Typography>
-                            <Typography variant="body2">
-                              <strong>Cut-out Speed:</strong>{" "}
-                              {details.cut_out} m/s
-                            </Typography>
-                          </Box>
+                              <Typography variant="body2">
+                                <strong>Rated Power:</strong>{" "}
+                                {details.rated_power.toLocaleString()} kW
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Rotor Diameter:</strong>{" "}
+                                {details.rotor_diameter} m
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Tip Height:</strong>{" "}
+                                {details.tip_height} m
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Cut-in Speed:</strong> {details.cut_in}{" "}
+                                m/s
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Rated Speed:</strong> {details.rated}{" "}
+                                m/s
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Cut-out Speed:</strong>{" "}
+                                {details.cut_out} m/s
+                              </Typography>
+                            </Box>
                           </Box>
                         </>
                       )}
@@ -355,20 +371,41 @@ export default function MapSelectionApp() {
             </List>
           </Box>
 
-          <Box sx={{ p: 2, borderTop: "1px solid #ddd" }}>
+          <Box
+            sx={{ p: 2, borderTop: "1px solid #ddd", display: "flex", gap: 2 }}
+          >
+            <TextField
+              type="number"
+              label="Days"
+              value={simulationDays}
+              onChange={(e) =>
+                setSimulationDays(Math.max(1, Number(e.target.value)))
+              }
+              size="small"
+              sx={{ width: 100, "& input": { textAlign: "center" } }}
+              inputProps={{ min: 1 }}
+            />
             <Button
               variant="contained"
               color="primary"
-              fullWidth
-              sx={{ borderRadius: 3, py: 1.2 }}
+              sx={{ borderRadius: 3, flexGrow: 1 }}
               onClick={runSimulation}
               disabled={loading || windmills.length === 0}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : "Run Simulation"}
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                "Run Simulation"
+              )}
             </Button>
           </Box>
         </Box>
       </Box>
+      <SimulationModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        windmills={windmills}
+      />
     </Box>
   );
 }
