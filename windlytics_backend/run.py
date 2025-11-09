@@ -28,7 +28,9 @@ def wind_turbine_power_curve(wind_speed, cut_in, rated, cut_out, rated_power):
         normalized_speed = (wind_speed - cut_in) / (rated - cut_in)
         return rated_power * (normalized_speed ** 3 * (10 - 15 * normalized_speed + 6 * normalized_speed ** 2))
     else:
-        return rated_power
+        # Dramatic drop after rated power
+        normalized_speed = (wind_speed - rated) / (cut_out - rated)
+        return rated_power * (1 - normalized_speed ** 3)  # Cubic decay
 
 @app.route('/generated-energy', methods=["POST"])
 def generated_energy():
@@ -56,11 +58,13 @@ def generated_energy():
         day = current_date.day
 
         # Predict wind speed for this day
-        wind_speed = predict_wind_speed(lat, log, month, day)
+        wind_speed = float(predict_wind_speed(lat, log, month, day))
+
+        print("predicted wind speed", wind_speed)
 
         # Calculate daily energy (MWh)
-        daily_power = wind_turbine_power_curve(wind_speed, cut_in, rated, cut_out, rated_power)
-        daily_energy = daily_power * 24  # MWh/day
+        daily_power = float(wind_turbine_power_curve(wind_speed, cut_in, rated, cut_out, rated_power))
+        daily_energy = float(daily_power * 24 / 1000)  # MWh/day
 
         daily_energies.append({
             "date": current_date.strftime("%Y-%m-%d"),
@@ -71,7 +75,7 @@ def generated_energy():
         total_energy += daily_energy
 
     return jsonify({
-        "total_energy_MWh": total_energy,
+        "total_energy_MWh": float(total_energy),
         "daily_energies": daily_energies,
         "num_days": num_days
     })
