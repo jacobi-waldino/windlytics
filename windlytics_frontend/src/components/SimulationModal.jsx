@@ -29,7 +29,7 @@ import {
 const colors = ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#F0E442"];
 const strokePatterns = ["solid", "5 5", "2 2", "8 4 2 4", "solid"];
 
-const PRICE_PER_MWH = 50; // $/MWh
+const PRICE_PER_MWH = 194; // $/MWh
 
 export default function SimulationModal({ open, onClose, windmills }) {
   const [activeTab, setActiveTab] = useState(0);
