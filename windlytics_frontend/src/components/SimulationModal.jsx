@@ -46,6 +46,18 @@ export default function SimulationModal({ open, onClose, windmills }) {
     return { totalEnergy, revenue };
   };
 
+  const getAggregateSummary = () => {
+    const totalEnergy = windmills.reduce(
+      (sum, w) => sum + (w.result?.total_energy_MWh || 0),
+      0
+    );
+    const revenue = (totalEnergy * PRICE_PER_MWH).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    return { totalEnergy, revenue };
+  };
+
   // Flatten hourly energies for plotting
   const getHourlyData = (w) => {
     if (!w?.result?.daily_energies) return [];
@@ -89,20 +101,42 @@ export default function SimulationModal({ open, onClose, windmills }) {
               ))}
             </Tabs>
 
-            {windmills[activeTab] && windmills[activeTab].result && (() => {
-              const summary = getSummary(windmills[activeTab]);
-              if (!summary) return null;
-              return (
-                <Box sx={{ mb: 1, p: 1, backgroundColor: "#e3f2fd", borderRadius: 1 }}>
-                  <Typography variant="h6">
-                    <b>Total Energy Generated:</b> {summary.totalEnergy.toLocaleString()} MWh
-                  </Typography>
-                  <Typography variant="h6">
-                    <b>Potential Revenue:</b> ${summary.revenue}
-                  </Typography>
-                </Box>
-              );
-            })()}
+            {windmills[activeTab] &&
+              windmills[activeTab].result &&
+              (() => {
+                const summary = getSummary(windmills[activeTab]);
+                if (!summary) return null;
+                return (
+                  <Box
+                    sx={{
+                      mb: 1,
+                      p: 1,
+                      backgroundColor: "#e3f2fd",
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="h6">
+                      <b>Energy Generated:</b>{" "}
+                      {summary.totalEnergy.toLocaleString()} MWh
+                    </Typography>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      <i>
+                        Aggregate (all turbines):{" "}</i>
+                        {getAggregateSummary().totalEnergy.toLocaleString()} MWh
+                      
+                    </Typography>
+                    <Typography variant="h6">
+                      <b>Potential Revenue:</b> ${summary.revenue}
+                    </Typography>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      <i>
+                        Aggregate (all turbines):</i> $
+                        {getAggregateSummary().revenue}
+                      
+                    </Typography>
+                  </Box>
+                );
+              })()}
 
             {windmills[activeTab] && windmills[activeTab].result ? (
               <ResponsiveContainer width="100%" height={400}>
@@ -111,12 +145,20 @@ export default function SimulationModal({ open, onClose, windmills }) {
                   <XAxis dataKey="datetime" tick={{ fontSize: 10 }} />
                   <YAxis
                     yAxisId="left"
-                    label={{ value: "Energy (MWh)", angle: -90, position: "insideLeft" }}
+                    label={{
+                      value: "Energy (MWh)",
+                      angle: -90,
+                      position: "insideLeft",
+                    }}
                   />
                   <YAxis
                     yAxisId="right"
                     orientation="right"
-                    label={{ value: "Wind Speed (m/s)", angle: 90, position: "insideRight" }}
+                    label={{
+                      value: "Wind Speed (m/s)",
+                      angle: 90,
+                      position: "insideRight",
+                    }}
                   />
                   <RechartsTooltip />
                   <Legend />
@@ -126,7 +168,7 @@ export default function SimulationModal({ open, onClose, windmills }) {
                     dataKey="energy_MWh"
                     stroke="#1976d2"
                     name="Energy (MWh)"
-                    dot={false} 
+                    dot={false}
                   />
                   <Line
                     yAxisId="right"
@@ -135,7 +177,7 @@ export default function SimulationModal({ open, onClose, windmills }) {
                     stroke="#ff6d00"
                     strokeDasharray="5 5"
                     name="Wind Speed (m/s)"
-                    dot={false} 
+                    dot={false}
                   />
                   <ReferenceLine
                     y={windmills[activeTab].result.cut_in}
@@ -165,7 +207,9 @@ export default function SimulationModal({ open, onClose, windmills }) {
             )}
 
             {/* Metadata */}
-            <Box sx={{ mt: 2, p: 2, backgroundColor: "#f5f5f5", borderRadius: 1 }}>
+            <Box
+              sx={{ mt: 2, p: 2, backgroundColor: "#f5f5f5", borderRadius: 1 }}
+            >
               {windmills[activeTab] && (
                 <>
                   <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
@@ -175,21 +219,32 @@ export default function SimulationModal({ open, onClose, windmills }) {
                     {windmills[activeTab].result?.message || ""}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Rated Power:</strong> {windmills[activeTab].result?.rated_power?.toLocaleString()} kW
+                    <strong>Rated Power:</strong>{" "}
+                    {windmills[activeTab].result?.rated_power?.toLocaleString()}{" "}
+                    kW
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Rotor Diameter:</strong> {windmills[activeTab].result?.rotor_diameter} m
+                    <strong>Rotor Diameter:</strong>{" "}
+                    {windmills[activeTab].result?.rotor_diameter} m
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Tip Height:</strong> {windmills[activeTab].result?.tip_height} m
+                    <strong>Tip Height:</strong>{" "}
+                    {windmills[activeTab].result?.tip_height} m
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Cut-in Wind Speed:</strong> {windmills[activeTab].result?.cut_in} m/s |{" "}
-                    <strong>Rated Wind Speed:</strong> {windmills[activeTab].result?.rated} m/s |{" "}
-                    <strong>Cut-out Wind Speed:</strong> {windmills[activeTab].result?.cut_out} m/s
+                    <strong>Cut-in Wind Speed:</strong>{" "}
+                    {windmills[activeTab].result?.cut_in} m/s |{" "}
+                    <strong>Rated Wind Speed:</strong>{" "}
+                    {windmills[activeTab].result?.rated} m/s |{" "}
+                    <strong>Cut-out Wind Speed:</strong>{" "}
+                    {windmills[activeTab].result?.cut_out} m/s
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Total Energy:</strong> {windmills[activeTab].result?.total_energy_MWh?.toLocaleString()} MWh
+                    <strong>Total Energy:</strong>{" "}
+                    {windmills[
+                      activeTab
+                    ].result?.total_energy_MWh?.toLocaleString()}{" "}
+                    MWh
                   </Typography>
                 </>
               )}
@@ -198,13 +253,26 @@ export default function SimulationModal({ open, onClose, windmills }) {
         ) : (
           // Comparison view
           <>
-            <Box sx={{ mb: 1, p: 1, backgroundColor: "#e3f2fd", borderRadius: 1 }}>
-              <Typography variant="subtitle2">
-                Total Energy Generated: {windmills.reduce((sum, w) => sum + (w.result?.total_energy_MWh || 0), 0).toLocaleString()} MWh
+            <Box
+              sx={{ mb: 1, p: 1, backgroundColor: "#e3f2fd", borderRadius: 1 }}
+            >
+              <Typography variant="h6">
+                <b>Total Energy Generated:</b>{" "}
+                {windmills
+                  .reduce(
+                    (sum, w) => sum + (w.result?.total_energy_MWh || 0),
+                    0
+                  )
+                  .toLocaleString()}{" "}
+                MWh
               </Typography>
-              <Typography variant="subtitle2">
-                Potential Revenue: ${(
-                  windmills.reduce((sum, w) => sum + (w.result?.total_energy_MWh || 0), 0) * PRICE_PER_MWH
+              <Typography variant="h6">
+                <b>Potential Revenue:</b> $
+                {(
+                  windmills.reduce(
+                    (sum, w) => sum + (w.result?.total_energy_MWh || 0),
+                    0
+                  ) * PRICE_PER_MWH
                 ).toLocaleString()}
               </Typography>
             </Box>
@@ -212,9 +280,28 @@ export default function SimulationModal({ open, onClose, windmills }) {
             <ResponsiveContainer width="100%" height={500}>
               <LineChart>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="datetime" type="category" allowDuplicatedCategory={false} />
-                <YAxis yAxisId="left" label={{ value: "Energy (MWh)", angle: -90, position: "insideLeft" }} />
-                <YAxis yAxisId="right" orientation="right" label={{ value: "Wind Speed (m/s)", angle: 90, position: "insideRight" }} />
+                <XAxis
+                  dataKey="datetime"
+                  type="category"
+                  allowDuplicatedCategory={false}
+                />
+                <YAxis
+                  yAxisId="left"
+                  label={{
+                    value: "Energy (MWh)",
+                    angle: -90,
+                    position: "insideLeft",
+                  }}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  label={{
+                    value: "Wind Speed (m/s)",
+                    angle: 90,
+                    position: "insideRight",
+                  }}
+                />
                 <RechartsTooltip />
                 <Legend />
                 {windmills.map((w, i) => {
@@ -224,7 +311,15 @@ export default function SimulationModal({ open, onClose, windmills }) {
                   const windColor = colors[(i * 2 + 1) % colors.length];
                   return (
                     <React.Fragment key={w.id}>
-                      <Line yAxisId="left" type="monotone" data={hourlyData} dataKey="energy_MWh" stroke={energyColor} name={`Turbine #${i + 1} Energy`} dot={false} />
+                      <Line
+                        yAxisId="left"
+                        type="monotone"
+                        data={hourlyData}
+                        dataKey="energy_MWh"
+                        stroke={energyColor}
+                        name={`Turbine #${i + 1} Energy`}
+                        dot={false}
+                      />
                       {/* <Line yAxisId="right" type="monotone" data={hourlyData} dataKey="wind_speed" stroke={windColor} strokeDasharray="5 5" name={`Turbine #${i + 1} Wind`} /> */}
                     </React.Fragment>
                   );
