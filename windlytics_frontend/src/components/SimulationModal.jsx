@@ -25,7 +25,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const colors = ["#1976d2", "#ff6d00", "#388e3c", "#9c27b0", "#fbc02d"];
+// Color-blind safe palette
+const colors = ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#F0E442"];
+const strokePatterns = ["solid", "5 5", "2 2", "8 4 2 4", "solid"];
+
 const PRICE_PER_MWH = 50; // $/MWh
 
 export default function SimulationModal({ open, onClose, windmills }) {
@@ -84,7 +87,7 @@ export default function SimulationModal({ open, onClose, windmills }) {
         <Typography variant="h5">
           <b>Results</b>
         </Typography>
-        
+
         <Box>
           <Button
             size="small"
@@ -285,8 +288,9 @@ export default function SimulationModal({ open, onClose, windmills }) {
                   <Typography variant="body2">
                     <strong>Cut-in Speed:</strong>{" "}
                     {windmills[activeTab].result?.cut_in} m/s |{" "}
-                    <strong>Rated Speed:</strong> {windmills[activeTab].result?.rated}{" "}
-                    m/s | <strong>Cut-out Speed:</strong>{" "}
+                    <strong>Rated Speed:</strong>{" "}
+                    {windmills[activeTab].result?.rated} m/s |{" "}
+                    <strong>Cut-out Speed:</strong>{" "}
                     {windmills[activeTab].result?.cut_out} m/s
                   </Typography>
                   <Typography variant="body2">
@@ -362,7 +366,10 @@ export default function SimulationModal({ open, onClose, windmills }) {
                 {windmills.map((w, i) => {
                   if (!w.result?.daily_energies) return null;
                   const hourlyData = getHourlyData(w);
-                  const energyColor = colors[(i * 2) % colors.length];
+                  const energyColor = colors[i % colors.length];
+                  const strokeDasharray =
+                    strokePatterns[i % strokePatterns.length];
+
                   return (
                     <Line
                       key={w.id}
@@ -371,6 +378,7 @@ export default function SimulationModal({ open, onClose, windmills }) {
                       data={hourlyData}
                       dataKey="energy_MWh"
                       stroke={energyColor}
+                      strokeDasharray={strokeDasharray}
                       name={`Turbine #${i + 1} Energy`}
                       dot={false}
                     />
