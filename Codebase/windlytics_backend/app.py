@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
+import os
 from flask_cors import CORS
 import joblib
 import pandas as pd
@@ -9,8 +10,19 @@ from datetime import datetime, timedelta
 loaded_model = joblib.load('./models/grib_wind_model.pkl')
 loaded_scaler = joblib.load('./models/grib_wind_scaler.pkl')
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BUILD_DIR = os.path.join(BASE_DIR, "frontend_build")
+
 app = Flask(__name__)
 CORS(app)
+
+@app.route("/")
+@app.route("/<path:path>")
+def serve_react(path="index.html"):
+    file_path = os.path.join(BUILD_DIR, path)
+    if os.path.exists(file_path):
+        return send_from_directory(BUILD_DIR, path)
+    return send_from_directory(BUILD_DIR, "index.html")
 
 # Predict wind speed in m/s
 def predict_wind_speed(lat, lon, date_time):
