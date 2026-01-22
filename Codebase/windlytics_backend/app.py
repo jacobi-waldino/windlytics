@@ -13,7 +13,7 @@ loaded_scaler = joblib.load('./models/grib_wind_scaler.pkl')
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 BUILD_DIR = os.path.join(BASE_DIR, "frontend_build")
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=BUILD_DIR, static_url_path="")
 CORS(app)
 
 @app.route("/")
