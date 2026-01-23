@@ -7,14 +7,15 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # Load model and scaler
-loaded_model = joblib.load('./models/grib_wind_model.pkl')
-loaded_scaler = joblib.load('./models/grib_wind_scaler.pkl')
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 BUILD_DIR = os.path.join(BASE_DIR, "frontend_build")
+MODEL_DIR = os.path.join(BASE_DIR, "models")
+
+loaded_model = joblib.load(os.path.join(MODEL_DIR, "grib_wind_model.pkl"))
+loaded_scaler = joblib.load(os.path.join(MODEL_DIR, "grib_wind_scaler.pkl"))
 
 app = Flask(__name__, static_folder=BUILD_DIR, static_url_path="")
-CORS(app)
+# CORS(app)
 
 @app.route("/")
 @app.route("/<path:path>")
@@ -23,6 +24,10 @@ def serve_react(path="index.html"):
     if os.path.exists(file_path):
         return send_from_directory(BUILD_DIR, path)
     return send_from_directory(BUILD_DIR, "index.html")
+
+@app.route("/health")
+def health():
+    return {"status": "ok"}
 
 # Predict wind speed in m/s
 def predict_wind_speed(lat, lon, date_time):
@@ -126,4 +131,4 @@ def generated_energy():
     })
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)
