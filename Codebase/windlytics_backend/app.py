@@ -15,14 +15,7 @@ loaded_model = joblib.load(os.path.join(MODEL_DIR, "grib_wind_model.pkl"))
 loaded_scaler = joblib.load(os.path.join(MODEL_DIR, "grib_wind_scaler.pkl"))
 
 app = Flask(__name__, static_folder=BUILD_DIR, static_url_path="")
-# CORS(app)
-
-@app.route("/assets/<path:filename>")
-def serve_assets(filename):
-    return send_from_directory(
-        os.path.join(BUILD_DIR, "assets"),
-        filename
-    )
+CORS(app)
 
 @app.route("/")
 @app.route("/<path:path>")
@@ -31,10 +24,6 @@ def serve_react(path="index.html"):
     if os.path.exists(file_path):
         return send_from_directory(BUILD_DIR, path)
     return send_from_directory(BUILD_DIR, "index.html")
-
-@app.route("/health")
-def health():
-    return {"status": "ok"}
 
 # Predict wind speed in m/s
 def predict_wind_speed(lat, lon, date_time):
