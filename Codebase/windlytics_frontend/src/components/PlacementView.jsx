@@ -204,7 +204,7 @@ export default function MapSelectionApp() {
       <AppBar position="static" color="primary" sx={{ boxShadow: 2 }}>
         <Toolbar>
           <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
-            Windlytics: Go Where the Wind Blows
+            ༄ Windlytics: Go Where the Wind Blows
           </Typography>
         </Toolbar>
       </AppBar>
