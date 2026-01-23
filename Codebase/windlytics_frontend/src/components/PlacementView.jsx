@@ -107,7 +107,7 @@ export default function MapSelectionApp() {
   const [windmills, setWindmills] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openModal, setOpenModal] = useState(false);
-  const [showBanks, setShowBanks] = useState(true);
+  const [showBanks, setShowBanks] = useState(false);
   const today = new Date();
   const nextWeek = new Date();
   nextWeek.setDate(today.getDate() + 7);
