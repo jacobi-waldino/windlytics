@@ -17,6 +17,13 @@ loaded_scaler = joblib.load(os.path.join(MODEL_DIR, "grib_wind_scaler.pkl"))
 app = Flask(__name__, static_folder=BUILD_DIR, static_url_path="")
 # CORS(app)
 
+@app.route("/assets/<path:filename>")
+def serve_assets(filename):
+    return send_from_directory(
+        os.path.join(BUILD_DIR, "assets"),
+        filename
+    )
+
 @app.route("/")
 @app.route("/<path:path>")
 def serve_react(path="index.html"):
